@@ -1,0 +1,30 @@
+{
+  "name": "crawl-dividends-stocks",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "luckstar77 <luckstar77y@gmail.com>",
+  "scripts": {
+    "start": "node run.js",
+    "lint": "eslint --ignore-path .gitignore .",
+    "prettier": "prettier --ignore-path .gitignore \"**/*.+(js|json|md)\"",
+    "format": "yarn prettier -- --write",
+    "check-format": "yarn prettier -- --list-different"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.506.0",
+    "cheerio": "^1.0.0-rc.3",
+    "lodash": "^4.17.15",
+    "mathjs": "^6.6.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^6.10.0",
+    "husky": "^4.2.1",
+    "lint-staged": "^10.0.7",
+    "prettier": "^1.19.1"
+  }
+}
