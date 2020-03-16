@@ -167,55 +167,61 @@ const worker = async (SubjectData) => {
     stock.rightRecoveredCount = 0;
     stock.cashRecoveredRate = 0;
     stock.rightRecoveredRate = 0;
+    stock.avgDividendYield = 0;
+    stock.sumDividendYield = 0;
 
     const dividendList = _.reduce($('#divDetail tbody tr'), (accu, item) => {
       const year = $(item).children('td').eq(0).text();
-      const dividend = $(item).children('td').eq(7).text() !== '-' ? parseFloat($(item).children('td').eq(7).text()) : $(item).children('td').eq(7).text();
-      const cashRecoveredDay = $(item).children('td').eq(10).text() !== '-' ? parseFloat($(item).children('td').eq(10).text()) : $(item).children('td').eq(10).text();
-      const rightRecoveredDay = $(item).children('td').eq(11).text() !== '-' ? parseFloat($(item).children('td').eq(11).text()) : $(item).children('td').eq(11).text();
-      const cashTotal = $(item).children('td').eq(3).text() !== '-' ? parseFloat($(item).children('td').eq(3).text()) : $(item).children('td').eq(3).text();
-      const rightTotal = $(item).children('td').eq(6).text() !== '-' ? parseFloat($(item).children('td').eq(6).text()) : $(item).children('td').eq(6).text();
+      const dividend = $(item).children('td').eq(7).text() !== '-' ? parseFloat($(item).children('td').eq(7).text()) : 0;
+      const cashRecoveredDay = $(item).children('td').eq(10).text() !== '-' ? parseFloat($(item).children('td').eq(10).text()) : 0;
+      const rightRecoveredDay = $(item).children('td').eq(11).text() !== '-' ? parseFloat($(item).children('td').eq(11).text()) : 0;
+      const cashTotal = $(item).children('td').eq(3).text() !== '-' ? parseFloat($(item).children('td').eq(3).text()) : 0;
+      const rightTotal = $(item).children('td').eq(6).text() !== '-' ? parseFloat($(item).children('td').eq(6).text()) : 0;
+      const dividendYield = $(item).children('td').eq(18).text() !== '-' ? parseFloat($(item).children('td').eq(18).text()) : 0;
       if(year === '累計') return accu;
       if(!(dividend > 0)) return accu;
       
+      if(!(cashTotal > 0) && !(rightTotal > 0)) return accu;
       stock.dividendCount++;
-      
+      stock.sumDividendYield += dividendYield;
+
       if(cashTotal > 0) stock.cashCount++;
       if(rightTotal > 0) stock.rightCount++;
-      if(cashRecoveredDay <= 366) stock.cashRecoveredCount++;
-      if(rightRecoveredDay <= 366) stock.rightRecoveredCount++;
+      if(cashRecoveredDay && cashRecoveredDay <= 366) stock.cashRecoveredCount++;
+      if(rightRecoveredDay && rightRecoveredDay <= 366) stock.rightRecoveredCount++;
 
       accu.push({
         year,
-        cashSurplus: $(item).children('td').eq(1).text() !== '-' ? parseFloat($(item).children('td').eq(1).text()) : $(item).children('td').eq(1).text(),
-        cashAdditionalPaidIn: $(item).children('td').eq(2).text() !== '-' ? parseFloat($(item).children('td').eq(2).text()) : $(item).children('td').eq(2).text(),
+        cashSurplus: $(item).children('td').eq(1).text() !== '-' ? parseFloat($(item).children('td').eq(1).text()) : 0,
+        cashAdditionalPaidIn: $(item).children('td').eq(2).text() !== '-' ? parseFloat($(item).children('td').eq(2).text()) : 0,
         cashTotal,
-        rightSurplus: $(item).children('td').eq(4).text() !== '-' ? parseFloat($(item).children('td').eq(4).text()) : $(item).children('td').eq(4).text(),
-        rightAdditionalPaidIn: $(item).children('td').eq(5).text() !== '-' ? parseFloat($(item).children('td').eq(5).text()) : $(item).children('td').eq(5).text(),
+        rightSurplus: $(item).children('td').eq(4).text() !== '-' ? parseFloat($(item).children('td').eq(4).text()) : 0,
+        rightAdditionalPaidIn: $(item).children('td').eq(5).text() !== '-' ? parseFloat($(item).children('td').eq(5).text()) : 0,
         rightTotal,
         dividend,
-        cashB: $(item).children('td').eq(8).text() !== '-' ? parseFloat($(item).children('td').eq(8).text()) : $(item).children('td').eq(8).text(),
-        rightK: $(item).children('td').eq(9).text() !== '-' ? parseFloat($(item).children('td').eq(9).text()) : $(item).children('td').eq(9).text(),
+        cashB: $(item).children('td').eq(8).text() !== '-' ? parseFloat($(item).children('td').eq(8).text()) : 0,
+        rightK: $(item).children('td').eq(9).text() !== '-' ? parseFloat($(item).children('td').eq(9).text()) : 0,
         cashRecoveredDay,
         rightRecoveredDay,
         year1: $(item).children('td').eq(12).text() !== '-',
-        maxPrice: $(item).children('td').eq(13).text() !== '-' ? parseFloat($(item).children('td').eq(13).text()) : $(item).children('td').eq(13).text(),
-        minPrice: $(item).children('td').eq(14).text() !== '-' ? parseFloat($(item).children('td').eq(14).text()) : $(item).children('td').eq(14).text(),
-        avgPrice: $(item).children('td').eq(15).text() !== '-' ? parseFloat($(item).children('td').eq(15).text()) : $(item).children('td').eq(15).text(),
-        cashDividendYield: $(item).children('td').eq(16).text() !== '-' ? parseFloat($(item).children('td').eq(16).text()) : $(item).children('td').eq(16).text(),
-        rightDividendYield: $(item).children('td').eq(17).text() !== '-' ? parseFloat($(item).children('td').eq(17).text()) : $(item).children('td').eq(17).text(),
-        dividendYield: $(item).children('td').eq(18).text() !== '-' ? parseFloat($(item).children('td').eq(18).text()) : $(item).children('td').eq(18).text(),
+        maxPrice: $(item).children('td').eq(13).text() !== '-' ? parseFloat($(item).children('td').eq(13).text()) : 0,
+        minPrice: $(item).children('td').eq(14).text() !== '-' ? parseFloat($(item).children('td').eq(14).text()) : 0,
+        avgPrice: $(item).children('td').eq(15).text() !== '-' ? parseFloat($(item).children('td').eq(15).text()) : 0,
+        cashDividendYield: $(item).children('td').eq(16).text() !== '-' ? parseFloat($(item).children('td').eq(16).text()) : 0,
+        rightDividendYield: $(item).children('td').eq(17).text() !== '-' ? parseFloat($(item).children('td').eq(17).text()) : 0,
+        dividendYield,
         year2: $(item).children('td').eq(19).text(),
-        eps: $(item).children('td').eq(20).text() !== '-' ? parseFloat($(item).children('td').eq(20).text()) : $(item).children('td').eq(20).text(),
-        cashDPR: $(item).children('td').eq(21).text() !== '-' ? parseFloat($(item).children('td').eq(21).text()) : $(item).children('td').eq(21).text(),
-        rightDPR: $(item).children('td').eq(22).text() !== '-' ? parseFloat($(item).children('td').eq(22).text()) : $(item).children('td').eq(22).text(),
-        dpr: $(item).children('td').eq(23).text() !== '-' ? parseFloat($(item).children('td').eq(23).text()) : $(item).children('td').eq(23).text(),
+        eps: $(item).children('td').eq(20).text() !== '-' ? parseFloat($(item).children('td').eq(20).text()) : 0,
+        cashDPR: $(item).children('td').eq(21).text() !== '-' ? parseFloat($(item).children('td').eq(21).text()) : 0,
+        rightDPR: $(item).children('td').eq(22).text() !== '-' ? parseFloat($(item).children('td').eq(22).text()) : 0,
+        dpr: $(item).children('td').eq(23).text() !== '-' ? parseFloat($(item).children('td').eq(23).text()) : 0,
       });
       return accu;
     }, []);
 
     if(stock.cashCount > 0) stock.cashRecoveredRate = stock.cashRecoveredCount / stock.cashCount;
-    if(stock.cashCount > 0) stock.rightRecoveredRate = stock.rightRecoveredCount / stock.rightCount;
+    if(stock.rightCount > 0) stock.rightRecoveredRate = stock.rightRecoveredCount / stock.rightCount;
+    if(stock.dividendCount > 0) stock.avgDividendYield = stock.sumDividendYield / stock.dividendCount;
     stock.dividendList = dividendList;
   }
 
