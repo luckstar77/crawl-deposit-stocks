@@ -185,3 +185,5 @@ requests.http
 # output
 output.json
 output.yml
+
+*.zip

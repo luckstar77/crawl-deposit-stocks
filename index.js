@@ -25,7 +25,6 @@ var params = {
       ],
       ToAddresses: [
         'luckstar77y@gmail.com',
-        'cheners123@gmail.com',
         /* more items */
       ]
     },
@@ -51,9 +50,9 @@ var params = {
     ],
   };
 
-const worker = async (SubjectData) => {
+const worker = async (SubjectData, isFutures) => {
   let $ = cheerio.load(await rp({
-    uri: 'https://stock.wespai.com/p/50557',
+    uri: 'https://stock.wespai.com/p/57193',
     headers: {
       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36',
     },
@@ -115,41 +114,43 @@ const worker = async (SubjectData) => {
       return accu;
     }, []);
 
-  $ = cheerio.load(await rp('https://www.taifex.com.tw/cht/2/stockLists'));
-  const stockFutures = _.map($('#myTable tbody tr'), item => ({
-      stockFutureSymbol: $(item).children('td').eq(0).text(),
-      twTitleFull: $(item).children('td').eq(1).text(),
-      symbol: $(item).children('td').eq(2).text(),
-      twTitle: $(item).children('td').eq(3).text(),
-      isStockFutureUnderlying: $(item).children('td').eq(4).text().trim() ? true : false,
-      isStockOptionUnderlying: $(item).children('td').eq(5).text().trim() ? true : false,
-      isStockExchangeUnderlying: $(item).children('td').eq(6).text().trim() ? true : false,
-      isOTCUnderlying: $(item).children('td').eq(7).text().trim() ? true : false,
-      isStockExchangeETFUnderlying: $(item).children('td').eq(8).text().trim() ? true : false,
-      NumberOfStock: parseInt($(item).children('td').eq(9).text().replace(',','')),
-  }));
+  if(isFutures) {
+    $ = cheerio.load(await rp('https://www.taifex.com.tw/cht/2/stockLists'));
+    const stockFutures = _.map($('#myTable tbody tr'), item => ({
+        stockFutureSymbol: $(item).children('td').eq(0).text(),
+        twTitleFull: $(item).children('td').eq(1).text(),
+        symbol: $(item).children('td').eq(2).text(),
+        twTitle: $(item).children('td').eq(3).text(),
+        isStockFutureUnderlying: $(item).children('td').eq(4).text().trim() ? true : false,
+        isStockOptionUnderlying: $(item).children('td').eq(5).text().trim() ? true : false,
+        isStockExchangeUnderlying: $(item).children('td').eq(6).text().trim() ? true : false,
+        isOTCUnderlying: $(item).children('td').eq(7).text().trim() ? true : false,
+        isStockExchangeETFUnderlying: $(item).children('td').eq(8).text().trim() ? true : false,
+        NumberOfStock: parseInt($(item).children('td').eq(9).text().replace(',','')),
+    }));
 
-  let notificationStocks = parseDepositStocks.reduce((accu, curr) => {
-      for(let stockFuture of stockFutures) {
-          if(curr.symbol !== stockFuture.symbol) continue;
+    parseDepositStocks = parseDepositStocks.reduce((accu, curr) => {
+        for(let stockFuture of stockFutures) {
+            if(curr.symbol !== stockFuture.symbol) continue;
 
-          accu.push({...curr, ...stockFuture});
-          break;
-      }
-      return accu;
-  }, []);
+            accu.push({...curr, ...stockFuture});
+            break;
+        }
+        return accu;
+    }, []);
+  }
+  
 
-  if(_.isEmpty(notificationStocks)) {
+  if(_.isEmpty(parseDepositStocks)) {
     params.Message.Body.Text.Data = JSON.stringify({
       parseDepositStocks,
     }, null, 2);
     params.Message.Subject.Data = SubjectData + '_沒有匹配';
     return await ses.sendEmail(params).promise();
   };
-  parseDepositStocks = notificationStocks;
   
   for(let stock of parseDepositStocks) {
-    let i = 0;
+    await new Promise(resolve=>setTimeout(()=>resolve(), 500));
     $ = cheerio.load(await rp({
       uri: 'https://goodinfo.tw/StockInfo/StockDividendPolicy.asp',
       qs: {
@@ -222,43 +223,53 @@ const worker = async (SubjectData) => {
     if(stock.cashCount > 0) stock.cashRecoveredRate = stock.cashRecoveredCount / stock.cashCount;
     if(stock.rightCount > 0) stock.rightRecoveredRate = stock.rightRecoveredCount / stock.rightCount;
     if(stock.dividendCount > 0) stock.avgDividendYield = stock.sumDividendYield / stock.dividendCount;
-    stock.dividendList = dividendList;
   }
 
   console.log(JSON.stringify(parseDepositStocks, null, 2));
 
-  notificationStocks = parseDepositStocks;
+  for (let i = 0; i <= parseInt(parseDepositStocks.length / 25); i++) {
+    const list = parseDepositStocks.slice(i * 25, (i + 1) * 25);
+    if (_.isEmpty(list)) break;
 
-  await new Promise((resolve, reject) => {
-    const now = new Date();
-    docClient.batchWrite({
-    RequestItems: {
-      'dividends': notificationStocks.map(notificationStock => ({
-        PutRequest: {
-          Item:{
-            ...notificationStock,
-            created: now.getTime(),
-          }
-        }
-      })),
-    }
-  }, function(err, data) {
-        if (err) {
-            console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+    await new Promise((resolve, reject) => {
+      const now = new Date();
+      docClient.batchWrite(
+        {
+          RequestItems: {
+            dividends: list.map(o => ({
+              PutRequest: {
+                Item: {
+                  ...o,
+                  created: now.getTime(),
+                },
+              },
+            })),
+          },
+        },
+        function(err, data) {
+          if (err) {
+            console.error(
+              'Unable to add item. Error JSON:',
+              JSON.stringify(err, null, 2),
+            );
+            console.log(list);
             reject(err);
-        } else {
-            console.log("Added item:", JSON.stringify(data, null, 2));
+          } else {
+            console.log('Added item:', JSON.stringify(data, null, 2));
             resolve(data);
-        }
+          }
+        },
+      );
     });
-  });
+  }
 
-  params.Message.Body.Text.Data = JSON.stringify(notificationStocks, null, 2);
+  params.Message.Body.Text.Data = JSON.stringify(parseDepositStocks, null, 2);
   params.Message.Subject.Data = SubjectData;
   return await ses.sendEmail(params).promise();
 }
 
 exports.handler = async function(event, context) {
-  await worker('殖利率大於5%且EPS營收穩定');
+  await worker('殖利率大於5%且EPS營收穩定_期貨', true);
+  await worker('殖利率大於5%且EPS營收穩定_股票', false);
   return 'ok';
 }

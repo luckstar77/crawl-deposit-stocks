@@ -34,3 +34,20 @@ isStockExchangeUnderlying           //上市普通股標的證券
 isOTCUnderlying                     //上櫃普通股標的證券  
 isStockExchangeETFUnderlying        //上市ETF標的證券  
 NumberOfStock                       //標準型證券股數  
+
+### zip packages
+
+1. zip the node_modules into nodejs(nodejs/node_modules)
+2. upload to s3
+
+### zip function
+
+```
+zip -r ./crawl-deposit-stocks.zip index.js
+```
+
+### deploy to lambda
+
+```
+aws lambda update-function-code --function-name crawl-deposit-stocks --zip-file fileb://crawl-deposit-stocks.zip
+```
