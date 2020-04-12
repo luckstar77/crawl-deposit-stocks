@@ -25,6 +25,7 @@ var params = {
       ],
       ToAddresses: [
         'luckstar77y@gmail.com',
+        '497j1005@stust.edu.tw',
         /* more items */
       ]
     },
